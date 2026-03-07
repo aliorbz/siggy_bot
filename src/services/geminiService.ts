@@ -137,13 +137,24 @@ export const chatWithSiggy = async (message: string, history: { role: "user" | "
     const response = await chat.sendMessage({ message });
     return response.text || "Siggy is currently distracted by a cosmic laser pointer.";
   } catch (error: any) {
-    console.error("Siggy is having a hairball (API Error):", error);
+    console.error("Siggy is having a hairball (Full API Error):", error);
     
     const errorMessage = error.message?.toLowerCase() || "";
+    const errorStatus = error.status || error.statusCode || "unknown";
+    const keyHint = apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "none";
+    
     if (errorMessage.includes("api key") || errorMessage.includes("invalid") || errorMessage.includes("403") || errorMessage.includes("401")) {
-      return "My cosmic key is invalid or unauthorized. The Ritualists need to check the GEMINI_API_KEY. (*Siggy stares judgmentally at the environment variables*)";
+      return `My cosmic key is invalid or unauthorized (Status: ${errorStatus}, Key: ${keyHint}). The Ritualists need to check the GEMINI_API_KEY in Vercel. (*Siggy stares judgmentally*)`;
+    }
+
+    if (errorMessage.includes("fetch") || errorMessage.includes("network") || errorMessage.includes("cors")) {
+      return "I can't reach the Ritual network! It might be a network glitch or a cosmic firewall. (*Siggy bats at the invisible barrier*)";
+    }
+
+    if (errorMessage.includes("model") || errorMessage.includes("not found")) {
+      return `I can't find the model 'gemini-3-flash-preview'. Maybe it's not available in this dimension yet? (Error: ${errorMessage})`;
     }
     
-    return "I've encountered a glitch in the space-time continuum. Or maybe I just don't want to talk right now. (Siggy knocks your connection off the table)";
+    return `I've encountered a glitch: "${error.message || "Unknown error"}". (Status: ${errorStatus}, Key: ${keyHint}) (*Siggy knocks your connection off the table*)`;
   }
 };

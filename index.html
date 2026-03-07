@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Google AI Studio App</title>
+    <script>
+      // Pre-emptively handle multiple wallet extensions trying to define window.ethereum
+      // to avoid the "Cannot redefine property: ethereum" error.
+      try {
+        if (!window.hasOwnProperty('ethereum')) {
+          let _ethereum = undefined;
+          Object.defineProperty(window, 'ethereum', {
+            get() { return _ethereum; },
+            set(val) { _ethereum = val; },
+            configurable: true,
+            enumerable: true
+          });
+        }
+      } catch (e) {
+        // Silently ignore if we can't define it
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -76,7 +76,7 @@ app.post("/api/chat", async (req, res) => {
 
   try {
     const chat = ai.chats.create({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-3-flash-preview",
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
       },

@@ -16,7 +16,7 @@ export default function App() {
     {
       id: '1',
       role: 'model',
-      text: "Ah. A new cultist arrives.\n\n\"*Siggy's ears twitch slightly.*\"\n\nHmm… interesting. In timeline 12 you brought snacks. This timeline is less generous.",
+      text: "Ah. A new Ritualist arrives.\n\n(Siggy's ears twitch slightly.)\n\nHmm… interesting.\n\nIn timeline 12 you brought snacks.\n\nThis timeline is less generous.",
       timestamp: Date.now(),
     },
   ]);
@@ -70,40 +70,79 @@ export default function App() {
       {
         id: Date.now().toString(),
         role: 'model',
-        text: "The altar is cleared. \"*Siggy knocks the previous ritual off the table.*\" A new timeline begins, ritualist.",
+        text: "Altar cleared, Ritualist.\n\n(Siggy knocks the past off the table.)\n\nNew timeline.",
         timestamp: Date.now(),
       },
     ]);
   };
 
-  // Custom renderer for Markdown to handle environment lines
+  // Helper to highlight "Ritual" in red and force capitalization
+  const highlightRitual = (text: string) => {
+    if (typeof text !== 'string') return text;
+    const parts = text.split(/(ritual)/gi);
+    return parts.map((part, i) => 
+      part.toLowerCase() === 'ritual' 
+        ? <span key={i} className="text-[#FF3131] font-medium">Ritual</span> 
+        : part
+    );
+  };
+
+  // Custom renderer for Markdown to handle environment lines and Ritual highlighting
   const MarkdownComponents = {
     p: ({ children }: any) => {
       const childrenArray = React.Children.toArray(children);
       
-      // Check if the paragraph is an environment line: starts and ends with quotes
-      // and contains italics (parsed as <em> by react-markdown)
-      const firstChild = childrenArray[0];
-      const startsWithQuote = firstChild === '"' || (typeof firstChild === 'string' && firstChild.startsWith('"'));
-      const lastChild = childrenArray[childrenArray.length - 1];
-      const endsWithQuote = lastChild === '"' || (typeof lastChild === 'string' && lastChild.endsWith('"'));
+      // Check if the paragraph is an environment line: starts and ends with parentheses
+      const fullText = childrenArray.map(child => {
+        if (typeof child === 'string') return child;
+        if (typeof child === 'object' && (child as any).props?.children) {
+          return Array.isArray((child as any).props.children) 
+            ? (child as any).props.children.join('') 
+            : (child as any).props.children;
+        }
+        return '';
+      }).join('').trim();
       
-      const hasItalics = childrenArray.some(child => 
-        typeof child === 'object' && (child as any).type === 'em'
-      );
-
-      if (startsWithQuote && endsWithQuote && hasItalics) {
+      const isStageDirection = fullText.startsWith('(') && fullText.endsWith(')');
+      
+      // If it looks like a stage direction, style it aggressively
+      if (isStageDirection) {
         return (
-          <p className="text-[11px] italic opacity-50 my-3 font-mono tracking-wider leading-relaxed text-[#39FF14]/80">
+          <p className="text-[9px] italic opacity-80 my-2 font-mono tracking-widest leading-tight text-yellow-100">
             {children}
           </p>
         );
       }
 
-      return <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>;
+      return (
+        <p className="mb-4 last:mb-0 leading-relaxed">
+          {React.Children.map(children, child => 
+            typeof child === 'string' ? highlightRitual(child) : child
+          )}
+        </p>
+      );
     },
-    em: ({ children }: any) => <em className="italic">{children}</em>,
-    strong: ({ children }: any) => <strong className="font-bold text-[#39FF14]">{children}</strong>,
+    em: ({ children }: any) => (
+      <em className="italic">
+        {React.Children.map(children, child => 
+          typeof child === 'string' ? highlightRitual(child) : child
+        )}
+      </em>
+    ),
+    strong: ({ children }: any) => (
+      <strong className="font-bold text-[#39FF14]">
+        {React.Children.map(children, child => 
+          typeof child === 'string' ? highlightRitual(child) : child
+        )}
+      </strong>
+    ),
+    li: ({ children }: any) => (
+      <li className="mb-1">
+        {React.Children.map(children, child => 
+          typeof child === 'string' ? highlightRitual(child) : child
+        )}
+      </li>
+    ),
   };
 
   return (

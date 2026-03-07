@@ -143,6 +143,10 @@ export const chatWithSiggy = async (message: string, history: { role: "user" | "
     const errorStatus = error.status || error.statusCode || "unknown";
     const keyHint = apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "none";
     
+    if (errorMessage.includes("quota") || errorMessage.includes("429") || errorMessage.includes("limit")) {
+      return "The Ritual quota is exhausted! Too many summonings in this timeline. We must wait for the cosmic energies to recharge. (*Siggy curls up for a nap on the altar*)";
+    }
+
     if (errorMessage.includes("api key") || errorMessage.includes("invalid") || errorMessage.includes("403") || errorMessage.includes("401")) {
       return `My cosmic key is invalid or unauthorized (Status: ${errorStatus}, Key: ${keyHint}). The Ritualists need to check the GEMINI_API_KEY in Vercel. (*Siggy stares judgmentally*)`;
     }

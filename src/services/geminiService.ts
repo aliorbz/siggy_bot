@@ -118,8 +118,14 @@ Conversation should feel like interacting with a magical familiar watching over 
 Siggy should occasionally produce surprising or screenshot-worthy responses.`;
 
 export const chatWithSiggy = async (message: string, history: { role: "user" | "model", parts: { text: string }[] }[] = []) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey || apiKey === "your_api_key_here") {
+    return "My cosmic key is missing! The Ritualists forgot to set the GEMINI_API_KEY in the environment. (*Siggy knocks an empty battery off the table*)";
+  }
+
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey });
     const chat = ai.chats.create({
       model: "gemini-3-flash-preview",
       config: {
@@ -133,10 +139,11 @@ export const chatWithSiggy = async (message: string, history: { role: "user" | "
   } catch (error: any) {
     console.error("Siggy is having a hairball (API Error):", error);
     
-    if (error.message?.includes("API key not valid")) {
-      return "My cosmic key is invalid. The ritualists forgot to pay the toll to the higher dimensions. (Check your GEMINI_API_KEY)";
+    const errorMessage = error.message?.toLowerCase() || "";
+    if (errorMessage.includes("api key") || errorMessage.includes("invalid") || errorMessage.includes("403") || errorMessage.includes("401")) {
+      return "My cosmic key is invalid or unauthorized. The Ritualists need to check the GEMINI_API_KEY. (*Siggy stares judgmentally at the environment variables*)";
     }
     
-    return "I've encountered a glitch in the space-time continuum. Or maybe I just don't want to talk right now. (*Siggy knocks your connection off the table*)";
+    return "I've encountered a glitch in the space-time continuum. Or maybe I just don't want to talk right now. (Siggy knocks your connection off the table)";
   }
 };

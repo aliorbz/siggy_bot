@@ -27,6 +27,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCopyToast, setShowCopyToast] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -35,6 +36,24 @@ export default function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -225,7 +244,7 @@ export default function App() {
             <p className="text-[10px] uppercase tracking-widest text-[#39FF14] font-mono opacity-80">Ritual Familiar</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 relative">
+        <div className="flex items-center gap-4 relative" ref={menuRef}>
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="p-2 hover:bg-[#39FF14]/10 rounded-full transition-all text-[#39FF14]/60 hover:text-[#39FF14]"
@@ -285,7 +304,7 @@ export default function App() {
 
       {/* Scrolling Chat Area */}
       <main className="flex-1 overflow-y-auto relative z-10 px-4 py-8 md:px-0 scrollbar-thin scrollbar-thumb-[#39FF14]/20 scrollbar-track-transparent">
-        <div className="max-w-3xl mx-auto space-y-10 pb-10">
+        <div className="max-w-3xl mx-auto space-y-10 pb-32">
           <AnimatePresence initial={false}>
             {messages.map((message) => (
               <motion.div
@@ -353,28 +372,28 @@ export default function App() {
         </div>
       </main>
 
-      {/* Fixed Footer */}
-      <footer className="flex-none relative z-20 p-8 bg-gradient-to-t from-black via-black to-transparent">
-        <div className="max-w-3xl mx-auto">
-          <div className="relative flex items-center">
+      {/* Floating Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 z-20 p-6 md:p-10 pointer-events-none">
+        <div className="max-w-3xl mx-auto pointer-events-auto">
+          <div className="relative flex items-center group">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Whisper your incantation..."
-              className="w-full bg-black/80 border-2 border-[#39FF14]/40 rounded-2xl py-5 pl-8 pr-20 focus:outline-none focus:border-[#39FF14] focus:shadow-[0_0_25px_rgba(57,255,20,0.2)] transition-all placeholder:text-[#39FF14]/30 text-white font-light tracking-wide"
+              className="w-full bg-black/95 rounded-2xl py-5 pl-8 pr-20 focus:outline-none shadow-[0_0_30px_rgba(57,255,20,0.15),0_10px_50px_rgba(0,0,0,0.9)] focus:shadow-[0_0_50px_rgba(57,255,20,0.3),0_10px_60px_rgba(0,0,0,1)] transition-all placeholder:text-[#39FF14]/30 text-white font-light tracking-wide backdrop-blur-2xl"
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className={`absolute right-2 w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
+              className={`absolute right-2.5 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
                 input.trim() && !isLoading 
-                  ? 'bg-[#39FF14] text-black shadow-[0_0_20px_rgba(57,255,20,0.5)] hover:scale-105 active:scale-95' 
-                  : 'bg-[#39FF14]/20 text-[#39FF14]/40'
+                  ? 'bg-[#39FF14] text-black shadow-[0_0_20px_rgba(57,255,20,0.4)] hover:scale-105 active:scale-95' 
+                  : 'bg-[#39FF14]/10 text-[#39FF14]/30'
               }`}
             >
-              <Send size={22} />
+              <Send size={20} />
             </button>
           </div>
         </div>

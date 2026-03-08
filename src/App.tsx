@@ -62,28 +62,31 @@ export default function App() {
       
       let processed = text;
       
-      // 1. Find bracketed content that starts with a capital letter (likely a stage direction)
-      // and ensure it has double newlines around it to become its own paragraph
+      // 1. Find bracketed content (stage directions) and ensure it has double newlines around it
+      // This catches (Siggy tilts head), (pauses), etc.
       processed = processed
-        .replace(/([^\n])\s*(\([A-Z][^)]+\))/g, '$1\n\n$2') 
-        .replace(/(\([A-Z][^)]+\))\s*([^\n])/g, '$1\n\n$2');
+        .replace(/([^\n])\s*(\([^)]+\))/g, '$1\n\n$2') 
+        .replace(/(\([^)]+\))\s*([^\n])/g, '$1\n\n$2');
 
-      // 2. Find italicized blocks that look like actions (start with capital, end with period)
+      // 2. Find italicized blocks that look like actions (e.g., *chuckles*, *purrs*)
       // and ensure they are also separated and wrapped in parentheses if they aren't already
-      // This helps catch cases where the model forgets the brackets but uses italics
       
       // Handle single action string
-      processed = processed.replace(/^(\*[A-Z][^*]+\.\*)$/g, '($1)');
+      processed = processed.replace(/^(\*[^*]+\*)$/g, '($1)');
       
       // Handle start of string followed by more text
-      processed = processed.replace(/^(\*[A-Z][^*]+\.\*)\s*([^\n])/g, '($1)\n\n$2');
+      processed = processed.replace(/^(\*[^*]+\*)\s*([^\n])/g, '($1)\n\n$2');
       
       // Handle middle or end of string
-      processed = processed.replace(/([^\n])\s*(\*[A-Z][^*]+\.\*)/g, (match, p1, p2) => {
+      processed = processed.replace(/([^\n])\s*(\*[^*]+\*)/g, (match, p1, p2) => {
         // If it's already in brackets, don't double wrap
         if (p1.trim().endsWith('(')) return match;
+        // If it's just a single word or short phrase in italics, it's likely an action
         return `${p1}\n\n(${p2})`;
       });
+
+      // 3. Remove dashes (-) and em-dashes (—) as requested
+      processed = processed.replace(/[—–-]/g, ',');
 
       return processed;
     };

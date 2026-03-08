@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Cat, Sparkles, Trash2, Github, ExternalLink, Moon, Sun } from 'lucide-react';
+import { Send, Cat, Sparkles, Trash2, Github, ExternalLink, Moon, Sun, Menu, RefreshCw, Share2, X, CheckCircle2 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { chatWithSiggy } from './services/siggyService';
 
@@ -10,6 +10,8 @@ interface Message {
   text: string;
   timestamp: number;
 }
+
+const SIGGY_PFP = "https://i.ibb.co.com/XfR6LRV7/Picsart-26-03-09-02-08-29-350.jpg";
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([
@@ -22,6 +24,8 @@ export default function App() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showCopyToast, setShowCopyToast] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -85,6 +89,22 @@ export default function App() {
         timestamp: Date.now(),
       },
     ]);
+    setIsMenuOpen(false);
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText('https://siggy-bot.vercel.app/');
+      setShowCopyToast(true);
+      setIsMenuOpen(false);
+      setTimeout(() => setShowCopyToast(false), 1500);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
   };
 
   // Helper to highlight "Ritual" in red and force capitalization
@@ -165,31 +185,78 @@ export default function App() {
       {/* Fixed Header */}
       <header className="flex-none relative z-20 border-b border-[#39FF14]/20 backdrop-blur-md bg-black/60 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-black border border-[#39FF14]/40 flex items-center justify-center text-[#39FF14] shadow-[0_0_10px_rgba(57,255,20,0.2)]">
-            <Cat size={24} />
+          <div className="w-10 h-10 rounded-full bg-black border border-[#39FF14]/40 overflow-hidden shadow-[0_0_10px_rgba(57,255,20,0.2)]">
+            <img 
+              src={SIGGY_PFP} 
+              alt="Siggy" 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-              Siggy <span className="text-[10px] uppercase tracking-widest text-[#39FF14] font-mono opacity-80">Ritual Familiar</span>
+              SiggyBai
             </h1>
-            <p className="text-xs text-[#39FF14]/60 italic font-mono">Status: Observing the Forge</p>
+            <p className="text-[10px] uppercase tracking-widest text-[#39FF14] font-mono opacity-80">Ritual Familiar</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 relative">
           <button 
-            onClick={clearChat}
-            className="p-2 hover:bg-[#39FF14]/10 rounded-full transition-all text-[#39FF14]/60 hover:text-[#39FF14] hover:shadow-[0_0_10px_rgba(57,255,20,0.2)]"
-            title="Reset Ritual"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-2 hover:bg-[#39FF14]/10 rounded-full transition-all text-[#39FF14]/60 hover:text-[#39FF14]"
           >
-            <Trash2 size={18} />
+            <Menu size={24} />
           </button>
-          <div className="h-4 w-[1px] bg-[#39FF14]/20" />
-          <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#39FF14]/40 font-mono">
-            <Sparkles size={12} className="text-[#39FF14]" />
-            The Circle is Open
-          </div>
+
+          <AnimatePresence>
+            {isMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.9, x: 20 }}
+                className="absolute right-0 top-12 bg-[#86EFAC] rounded-2xl p-2 flex flex-col gap-2 shadow-[0_0_20px_rgba(134,239,172,0.3)] z-50 min-w-[50px]"
+              >
+                <button 
+                  onClick={handleRefresh}
+                  className="p-3 hover:bg-black/10 rounded-xl transition-all text-black flex items-center justify-center"
+                  title="Refresh"
+                >
+                  <RefreshCw size={24} strokeWidth={2.5} />
+                </button>
+                <button 
+                  onClick={handleShare}
+                  className="p-3 hover:bg-black/10 rounded-xl transition-all text-black flex items-center justify-center"
+                  title="Share"
+                >
+                  <Share2 size={24} strokeWidth={2.5} />
+                </button>
+                <button 
+                  onClick={clearChat}
+                  className="p-3 hover:bg-black/10 rounded-xl transition-all text-black flex items-center justify-center"
+                  title="Reset Ritual"
+                >
+                  <Trash2 size={24} strokeWidth={2.5} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </header>
+
+      {/* Copy Toast */}
+      <AnimatePresence>
+        {showCopyToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[#39FF14] text-black px-6 py-3 rounded-full font-mono text-xs font-bold shadow-[0_0_20px_rgba(57,255,20,0.4)] flex items-center gap-2"
+          >
+            <CheckCircle2 size={16} />
+            LINK COPIED
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Scrolling Chat Area */}
       <main className="flex-1 overflow-y-auto relative z-10 px-4 py-8 md:px-0 scrollbar-thin scrollbar-thumb-[#39FF14]/20 scrollbar-track-transparent">
@@ -204,17 +271,24 @@ export default function App() {
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div 
-                  className={`max-w-[85%] md:max-w-[75%] px-6 py-5 rounded-2xl transition-all ${
+                  className={`max-w-[85%] md:max-w-[75%] px-6 py-5 rounded-2xl transition-all relative ${
                     message.role === 'user' 
                       ? 'bg-[#39FF14]/5 border border-[#39FF14]/30 text-white shadow-[0_0_15px_rgba(57,255,20,0.05)]' 
-                      : 'bg-black/60 border border-[#39FF14]/10 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.5)]'
+                      : 'bg-black/60 border border-[#39FF14]/20 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.5)]'
                   }`}
                 >
+                  {message.role === 'model' && (
+                    <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full border-2 border-[#39FF14] overflow-hidden shadow-[0_0_10px_#39FF14/40] z-10">
+                      <img 
+                        src={SIGGY_PFP} 
+                        alt="Siggy" 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
                   <div className="text-sm font-light tracking-wide">
                     <Markdown components={MarkdownComponents}>{message.text}</Markdown>
-                  </div>
-                  <div className={`mt-3 text-[9px] uppercase tracking-[0.2em] font-mono opacity-30 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
               </motion.div>
@@ -245,7 +319,6 @@ export default function App() {
                     className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_8px_#39FF14]" 
                   />
                 </div>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-[#39FF14]/60 font-mono">Summoning response...</span>
               </div>
             </motion.div>
           )}
@@ -256,36 +329,26 @@ export default function App() {
       {/* Fixed Footer */}
       <footer className="flex-none relative z-20 p-8 bg-gradient-to-t from-black via-black to-transparent">
         <div className="max-w-3xl mx-auto">
-          <div className="relative group">
+          <div className="relative flex items-center">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Whisper your incantation..."
-              className="w-full bg-black border border-[#39FF14]/20 rounded-xl py-5 pl-8 pr-16 focus:outline-none focus:border-[#39FF14]/60 focus:shadow-[0_0_20px_rgba(57,255,20,0.1)] transition-all placeholder:text-[#39FF14]/20 text-white font-light tracking-wide"
+              className="w-full bg-black/80 border-2 border-[#39FF14]/40 rounded-2xl py-5 pl-8 pr-20 focus:outline-none focus:border-[#39FF14] focus:shadow-[0_0_25px_rgba(57,255,20,0.2)] transition-all placeholder:text-[#39FF14]/30 text-white font-light tracking-wide"
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className={`absolute right-3 top-3 w-12 h-12 rounded-lg flex items-center justify-center transition-all ${
+              className={`absolute right-2 w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
                 input.trim() && !isLoading 
-                  ? 'bg-[#39FF14] text-black shadow-[0_0_20px_rgba(57,255,20,0.4)] hover:scale-105 active:scale-95' 
-                  : 'bg-[#39FF14]/10 text-[#39FF14]/20'
+                  ? 'bg-[#39FF14] text-black shadow-[0_0_20px_rgba(57,255,20,0.5)] hover:scale-105 active:scale-95' 
+                  : 'bg-[#39FF14]/20 text-[#39FF14]/40'
               }`}
             >
-              <Send size={20} />
+              <Send size={22} />
             </button>
-          </div>
-          <div className="flex justify-center gap-8 mt-6">
-            <div className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] text-[#39FF14]/30 font-mono">
-              <div className="w-1 h-1 rounded-full bg-[#39FF14]/30" />
-              Arcane Protocol
-            </div>
-            <div className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] text-[#39FF14]/30 font-mono">
-              <div className="w-1 h-1 rounded-full bg-[#39FF14]/30" />
-              Timeline Sync: Active
-            </div>
           </div>
         </div>
       </footer>

@@ -11,7 +11,7 @@ interface Message {
   timestamp: number;
 }
 
-const SIGGY_PFP = "https://i.ibb.co.com/XfR6LRV7/Picsart-26-03-09-02-08-29-350.jpg";
+const SIGGY_PFP = "https://i.ibb.co.com/vCYNBvB1/Picsart-26-03-09-02-28-49-302.jpg";
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([
@@ -59,11 +59,33 @@ export default function App() {
     // Pre-process text to ensure stage directions (...) are on separate lines
     const processSiggyText = (text: string) => {
       if (!text) return text;
-      // Find bracketed content that starts with a capital letter (likely a stage direction)
+      
+      let processed = text;
+      
+      // 1. Find bracketed content that starts with a capital letter (likely a stage direction)
       // and ensure it has double newlines around it to become its own paragraph
-      return text
+      processed = processed
         .replace(/([^\n])\s*(\([A-Z][^)]+\))/g, '$1\n\n$2') 
         .replace(/(\([A-Z][^)]+\))\s*([^\n])/g, '$1\n\n$2');
+
+      // 2. Find italicized blocks that look like actions (start with capital, end with period)
+      // and ensure they are also separated and wrapped in parentheses if they aren't already
+      // This helps catch cases where the model forgets the brackets but uses italics
+      
+      // Handle single action string
+      processed = processed.replace(/^(\*[A-Z][^*]+\.\*)$/g, '($1)');
+      
+      // Handle start of string followed by more text
+      processed = processed.replace(/^(\*[A-Z][^*]+\.\*)\s*([^\n])/g, '($1)\n\n$2');
+      
+      // Handle middle or end of string
+      processed = processed.replace(/([^\n])\s*(\*[A-Z][^*]+\.\*)/g, (match, p1, p2) => {
+        // If it's already in brackets, don't double wrap
+        if (p1.trim().endsWith('(')) return match;
+        return `${p1}\n\n(${p2})`;
+      });
+
+      return processed;
     };
 
     const responseText = await chatWithSiggy(input, history);
@@ -270,15 +292,9 @@ export default function App() {
                 transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div 
-                  className={`max-w-[85%] md:max-w-[75%] px-6 py-5 rounded-2xl transition-all relative ${
-                    message.role === 'user' 
-                      ? 'bg-[#39FF14]/5 border border-[#39FF14]/30 text-white shadow-[0_0_15px_rgba(57,255,20,0.05)]' 
-                      : 'bg-black/60 border border-[#39FF14]/20 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.5)]'
-                  }`}
-                >
+                <div className={`flex items-start gap-3 max-w-[90%] md:max-w-[85%] ${message.role === 'user' ? 'flex-row-reverse ml-auto' : 'flex-row'}`}>
                   {message.role === 'model' && (
-                    <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full border-2 border-[#39FF14] overflow-hidden shadow-[0_0_10px_#39FF14/40] z-10">
+                    <div className="flex-none w-8 h-8 rounded-full border-2 border-[#39FF14] overflow-hidden shadow-[0_0_10px_#39FF14/40] mt-1">
                       <img 
                         src={SIGGY_PFP} 
                         alt="Siggy" 
@@ -287,8 +303,16 @@ export default function App() {
                       />
                     </div>
                   )}
-                  <div className="text-sm font-light tracking-wide">
-                    <Markdown components={MarkdownComponents}>{message.text}</Markdown>
+                  <div 
+                    className={`px-6 py-5 rounded-2xl transition-all ${
+                      message.role === 'user' 
+                        ? 'bg-[#39FF14]/5 border border-[#39FF14]/30 text-white shadow-[0_0_15px_rgba(57,255,20,0.05)]' 
+                        : 'bg-black/60 border border-[#39FF14]/20 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.5)]'
+                    }`}
+                  >
+                    <div className="text-sm font-light tracking-wide">
+                      <Markdown components={MarkdownComponents}>{message.text}</Markdown>
+                    </div>
                   </div>
                 </div>
               </motion.div>

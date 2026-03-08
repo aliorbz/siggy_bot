@@ -309,8 +309,8 @@ export default function App() {
                   <div 
                     className={`px-6 py-5 rounded-2xl transition-all ${
                       message.role === 'user' 
-                        ? 'bg-[#39FF14]/5 border border-[#39FF14]/30 text-white shadow-[0_0_15px_rgba(57,255,20,0.05)]' 
-                        : 'bg-black/60 border border-[#39FF14]/20 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.5)]'
+                        ? 'bg-[#39FF14]/15 border-2 border-[#39FF14]/40 text-white shadow-[0_0_20px_rgba(57,255,20,0.1)]' 
+                        : 'bg-[#39FF14]/10 border-2 border-[#39FF14]/30 backdrop-blur-xl shadow-[0_0_25px_rgba(0,0,0,0.6)]'
                     }`}
                   >
                     <div className="text-sm font-light tracking-wide">

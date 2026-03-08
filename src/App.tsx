@@ -52,12 +52,23 @@ export default function App() {
       parts: [{ text: msg.text }],
     }));
 
+    // Pre-process text to ensure stage directions (...) are on separate lines
+    const processSiggyText = (text: string) => {
+      if (!text) return text;
+      // Find bracketed content that starts with a capital letter (likely a stage direction)
+      // and ensure it has double newlines around it to become its own paragraph
+      return text
+        .replace(/([^\n])\s*(\([A-Z][^)]+\))/g, '$1\n\n$2') 
+        .replace(/(\([A-Z][^)]+\))\s*([^\n])/g, '$1\n\n$2');
+    };
+
     const responseText = await chatWithSiggy(input, history);
+    const processedText = processSiggyText(responseText);
 
     const siggyMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: 'model',
-      text: responseText,
+      text: processedText,
       timestamp: Date.now(),
     };
 
@@ -90,25 +101,22 @@ export default function App() {
   // Custom renderer for Markdown to handle environment lines and Ritual highlighting
   const MarkdownComponents = {
     p: ({ children }: any) => {
-      const childrenArray = React.Children.toArray(children);
-      
-      // Check if the paragraph is an environment line: starts and ends with parentheses
-      const fullText = childrenArray.map(child => {
-        if (typeof child === 'string') return child;
-        if (typeof child === 'object' && (child as any).props?.children) {
-          return Array.isArray((child as any).props.children) 
-            ? (child as any).props.children.join('') 
-            : (child as any).props.children;
-        }
+      // Helper to extract all text content from nested React elements
+      const extractText = (node: any): string => {
+        if (!node) return '';
+        if (typeof node === 'string') return node;
+        if (Array.isArray(node)) return node.map(extractText).join('');
+        if (typeof node === 'object' && node?.props?.children) return extractText(node.props.children);
         return '';
-      }).join('').trim();
+      };
       
+      const fullText = extractText(children).trim();
       const isStageDirection = fullText.startsWith('(') && fullText.endsWith(')');
       
       // If it looks like a stage direction, style it aggressively
       if (isStageDirection) {
         return (
-          <p className="text-[9px] italic opacity-80 my-2 font-mono tracking-widest leading-tight text-yellow-100">
+          <p className="text-[10px] italic opacity-70 my-3 font-mono tracking-wider leading-relaxed text-yellow-100/80 bg-white/5 px-3 py-1.5 rounded-lg border-l-2 border-yellow-100/20">
             {children}
           </p>
         );

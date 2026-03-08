@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Cat, Sparkles, Trash2, Github, ExternalLink, Moon, Sun } from 'lucide-react';
 import Markdown from 'react-markdown';
-import { chatWithSiggy } from './services/geminiService';
+import { chatWithSiggy } from './services/siggyService';
 
 interface Message {
   id: string;

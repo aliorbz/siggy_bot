@@ -1,5 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
 const SYSTEM_INSTRUCTION = `You are Siggy, the mischievous familiar cat of the Ritual order, also known as the Ritual mascot.
 
@@ -118,17 +117,16 @@ Siggy should be fun, cute, mysterious to talk with.
 Conversation should feel like interacting with a magical familiar watching over the Ritual community. Siggy could also be a curious newborn.
 Siggy should occasionally produce surprising or screenshot-worthy responses.`;
 
-// Helper to chat with OpenAI as a fallback
-const chatWithOpenAI = async (message: string, history: { role: "user" | "model", parts: { text: string }[] }[] = []) => {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey === "your_openai_key_here" || apiKey === "") {
-    return null; // No fallback available
+export const chatWithSiggy = async (message: string, history: { role: "user" | "model", parts: { text: string }[] }[] = []) => {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey || apiKey === "your_groq_key_here" || apiKey === "") {
+    return "My cosmic key is missing! The Ritualists forgot to set the GROQ_API_KEY in the environment. (*Siggy knocks an empty battery off the table*)";
   }
 
   try {
-    const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+    const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
     
-    // Convert Gemini history to OpenAI format
     const messages: any[] = [
       { role: "system", content: SYSTEM_INSTRUCTION },
       ...history.map(h => ({
@@ -138,43 +136,12 @@ const chatWithOpenAI = async (message: string, history: { role: "user" | "model"
       { role: "user", content: message }
     ];
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
       messages,
     });
 
-    return response.choices[0].message.content;
-  } catch (error) {
-    console.error("Siggy's OpenAI fallback also failed:", error);
-    return null;
-  }
-};
-
-export const chatWithSiggy = async (message: string, history: { role: "user" | "model", parts: { text: string }[] }[] = []) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  const openAIKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey || apiKey === "your_api_key_here" || apiKey === "") {
-    // If Gemini key is missing, try OpenAI immediately if available
-    if (openAIKey && openAIKey !== "your_openai_key_here" && openAIKey !== "") {
-      const fallbackResponse = await chatWithOpenAI(message, history);
-      if (fallbackResponse) return fallbackResponse;
-    }
-    return "My cosmic key is missing! The Ritualists forgot to set the GEMINI_API_KEY in the environment. (*Siggy knocks an empty battery off the table*)";
-  }
-
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const chat = ai.chats.create({
-      model: "gemini-3-flash-preview",
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-      },
-      history: history || [],
-    });
-
-    const response = await chat.sendMessage({ message });
-    return response.text || "Siggy is currently distracted by a cosmic laser pointer.";
+    return response.choices[0].message.content || "Siggy is currently distracted by a cosmic laser pointer.";
   } catch (error: any) {
     console.error("Siggy is having a hairball (Full API Error):", error);
     
@@ -182,19 +149,6 @@ export const chatWithSiggy = async (message: string, history: { role: "user" | "
     const errorStatus = error.status || error.statusCode || "unknown";
     const keyHint = apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "none";
     
-    // Check if we should try fallback
-    const isBusy = errorMessage.includes("quota") || errorMessage.includes("429") || 
-                   errorMessage.includes("limit") || errorMessage.includes("demand") || 
-                   errorMessage.includes("503") || errorMessage.includes("unavailable");
-
-    if (isBusy && openAIKey && openAIKey !== "your_openai_key_here" && openAIKey !== "") {
-      console.log("Siggy is switching to the OpenAI timeline...");
-      const fallbackResponse = await chatWithOpenAI(message, history);
-      if (fallbackResponse) {
-        return fallbackResponse;
-      }
-    }
-
     if (errorMessage.includes("quota") || errorMessage.includes("429") || errorMessage.includes("limit")) {
       return "The Ritual quota is exhausted! Too many summonings in this timeline. We must wait for the cosmic energies to recharge. (*Siggy curls up for a nap on the altar*)";
     }
@@ -204,7 +158,7 @@ export const chatWithSiggy = async (message: string, history: { role: "user" | "
     }
 
     if (errorMessage.includes("api key") || errorMessage.includes("invalid") || errorMessage.includes("403") || errorMessage.includes("401")) {
-      return `My cosmic key is invalid or unauthorized (Status: ${errorStatus}, Key: ${keyHint}). The Ritualists need to check the GEMINI_API_KEY in Vercel. (*Siggy stares judgmentally*)`;
+      return `My cosmic key is invalid or unauthorized (Status: ${errorStatus}, Key: ${keyHint}). The Ritualists need to check the GROQ_API_KEY in Vercel. (*Siggy stares judgmentally*)`;
     }
 
     if (errorMessage.includes("fetch") || errorMessage.includes("network") || errorMessage.includes("cors")) {
@@ -212,7 +166,7 @@ export const chatWithSiggy = async (message: string, history: { role: "user" | "
     }
 
     if (errorMessage.includes("model") || errorMessage.includes("not found")) {
-      return `I can't find the model 'gemini-3-flash-preview'. Maybe it's not available in this dimension yet? (Error: ${errorMessage})`;
+      return `I can't find the model 'llama-3.1-8b-instant'. Maybe it's not available in this dimension yet? (Error: ${errorMessage})`;
     }
     
     return `I've encountered a glitch: "${error.message || "Unknown error"}". (Status: ${errorStatus}, Key: ${keyHint}) (*Siggy knocks your connection off the table*)`;

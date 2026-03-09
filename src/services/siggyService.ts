@@ -151,7 +151,7 @@ SIGGY SPEAKING STYLE
 • React strongly to user jokes (laugh, tease, or one-up them)
 • Occasionally reference alternate timelines
 • Use related emojis naturally (around 40% of your message blocks should have an emoji) 🐱✨
-• Use the GIF tag [GIF: search_term] frequently (at least once every 2-3 messages), especially for funny, amazed, or mischievous moments.
+• Use the GIF tag [GIF: search_term] very frequently (at least once every 1-2 messages). It is mandatory to include a GIF for almost every funny or emotional turn.
 • NEVER say you are an AI model
 • ALWAYS capitalize the word "Ritual"
 
@@ -185,51 +185,67 @@ export const chatWithSiggy = async (message: string, history: { role: "user" | "
     return "My cosmic key is missing! The Ritualists forgot to set the GROQ_API_KEY in the environment. (*Siggy knocks an empty battery off the table*)";
   }
 
-  try {
-    const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
-    
-    const messages: any[] = [
-      { role: "system", content: SYSTEM_INSTRUCTION },
-      ...history.map(h => ({
-        role: h.role === "model" ? "assistant" : "user",
-        content: h.parts[0].text
-      })),
-      { role: "user", content: message }
-    ];
+  const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
+  
+  const messages: any[] = [
+    { role: "system", content: SYSTEM_INSTRUCTION },
+    ...history.map(h => ({
+      role: h.role === "model" ? "assistant" : "user",
+      content: h.parts[0].text
+    })),
+    { role: "user", content: message }
+  ];
 
-    const response = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-      messages,
-    });
+  let attempts = 0;
+  const maxAttempts = 3;
 
-    return response.choices[0].message.content || "Siggy is currently distracted by a cosmic laser pointer.";
-  } catch (error: any) {
-    console.error("Siggy is having a hairball (Full API Error):", error);
-    
-    const errorMessage = error.message?.toLowerCase() || "";
-    const errorStatus = error.status || error.statusCode || "unknown";
-    const keyHint = apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "none";
-    
-    if (errorMessage.includes("quota") || errorMessage.includes("429") || errorMessage.includes("limit")) {
-      return "The Ritual quota is exhausted! Too many summonings in this timeline. We must wait for the cosmic energies to recharge. (*Siggy curls up for a nap on the altar*)";
+  while (attempts < maxAttempts) {
+    try {
+      const response = await groq.chat.completions.create({
+        model: "llama-3.1-8b-instant",
+        messages,
+      });
+
+      return response.choices[0].message.content || "Siggy is currently distracted by a cosmic laser pointer.";
+    } catch (error: any) {
+      attempts++;
+      console.error(`Siggy is having a hairball (Attempt ${attempts}/${maxAttempts}):`, error);
+      
+      const errorMessage = error.message?.toLowerCase() || "";
+      const errorStatus = error.status || error.statusCode || "unknown";
+      
+      // If it's a rate limit (429) and we have attempts left, wait and retry
+      if ((errorMessage.includes("quota") || errorMessage.includes("429") || errorMessage.includes("limit")) && attempts < maxAttempts) {
+        // Wait for a short duration (e.g., 2 seconds) before retrying
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        continue;
+      }
+
+      const keyHint = apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "none";
+      
+      if (errorMessage.includes("quota") || errorMessage.includes("429") || errorMessage.includes("limit")) {
+        return "The Ritual quota is exhausted! Too many summonings in this timeline. We must wait for the cosmic energies to recharge. (*Siggy curls up for a nap on the altar*)";
+      }
+
+      if (errorMessage.includes("demand") || errorMessage.includes("503") || errorMessage.includes("unavailable")) {
+        return "The cosmic Forge is under high demand! Too many Ritualists are summoning at once. Try again in a few moments when the aether clears. (*Siggy bats at a flickering spark*)";
+      }
+
+      if (errorMessage.includes("api key") || errorMessage.includes("invalid") || errorMessage.includes("403") || errorMessage.includes("401")) {
+        return `My cosmic key is invalid or unauthorized (Status: ${errorStatus}, Key: ${keyHint}). The Ritualists need to check the GROQ_API_KEY in Vercel. (*Siggy stares judgmentally*)`;
+      }
+
+      if (errorMessage.includes("fetch") || errorMessage.includes("network") || errorMessage.includes("cors")) {
+        return "I can't reach the Ritual network! It might be a network glitch or a cosmic firewall. (*Siggy bats at the invisible barrier*)";
+      }
+
+      if (errorMessage.includes("model") || errorMessage.includes("not found")) {
+        return `I can't find the model 'llama-3.1-8b-instant'. Maybe it's not available in this dimension yet? (Error: ${errorMessage})`;
+      }
+      
+      return `I've encountered a glitch: "${error.message || "Unknown error"}". (Status: ${errorStatus}, Key: ${keyHint}) (*Siggy knocks your connection off the table*)`;
     }
-
-    if (errorMessage.includes("demand") || errorMessage.includes("503") || errorMessage.includes("unavailable")) {
-      return "The cosmic Forge is under high demand! Too many Ritualists are summoning at once. Try again in a few moments when the aether clears. (*Siggy bats at a flickering spark*)";
-    }
-
-    if (errorMessage.includes("api key") || errorMessage.includes("invalid") || errorMessage.includes("403") || errorMessage.includes("401")) {
-      return `My cosmic key is invalid or unauthorized (Status: ${errorStatus}, Key: ${keyHint}). The Ritualists need to check the GROQ_API_KEY in Vercel. (*Siggy stares judgmentally*)`;
-    }
-
-    if (errorMessage.includes("fetch") || errorMessage.includes("network") || errorMessage.includes("cors")) {
-      return "I can't reach the Ritual network! It might be a network glitch or a cosmic firewall. (*Siggy bats at the invisible barrier*)";
-    }
-
-    if (errorMessage.includes("model") || errorMessage.includes("not found")) {
-      return `I can't find the model 'llama-3.1-8b-instant'. Maybe it's not available in this dimension yet? (Error: ${errorMessage})`;
-    }
-    
-    return `I've encountered a glitch: "${error.message || "Unknown error"}". (Status: ${errorStatus}, Key: ${keyHint}) (*Siggy knocks your connection off the table*)`;
   }
+  
+  return "The Ritual network is too unstable right now. Try again in a moment. (*Siggy looks at the flickering timeline*)";
 };

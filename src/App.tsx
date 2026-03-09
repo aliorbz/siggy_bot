@@ -124,6 +124,7 @@ export default function App() {
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
       
+
       // Check for GIF tag
       let finalBlock = block;
       let gifUrl = '';
@@ -131,18 +132,21 @@ export default function App() {
       if (gifMatch) {
         const searchTerm = gifMatch[1].toLowerCase();
         
-        // Dynamic cat gifs for cat-related terms
-        if (searchTerm.includes('cat') || searchTerm.includes('siggy') || searchTerm.includes('kitten') || searchTerm.includes('meow')) {
+        // Use cataas for almost everything cat-related or as a very reliable fallback
+        if (searchTerm.includes('cat') || searchTerm.includes('siggy') || searchTerm.includes('kitten') || searchTerm.includes('meow') || Math.random() > 0.5) {
           gifUrl = `https://cataas.com/cat/gif?${Date.now()}`;
         } else {
-          // A few different funny/reaction fallbacks to avoid repetition
-          const fallbacks = [
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/3o7TKMGpxx877C1968/giphy.gif', // Laughing
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/26n6Gx9moCgs1pUuk/giphy.gif', // LOL
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/l378bu6yeTuYMhrDa/giphy.gif', // Wow
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/3o7TKVUn7iM8FMEU24/giphy.gif', // Thinking
+          // Stable Giphy IDs that rarely break
+          const stableIds = [
+            '3o7TKMGpxx877C1968', // Laughing
+            '26n6Gx9moCgs1pUuk', // LOL
+            'l378bu6yeTuYMhrDa', // Wow
+            '3o7TKVUn7iM8FMEU24', // Thinking
+            'vFKqnCdLPNOKc', // Cat typing
+            'CjmvTCZf2U3p09Cn0h', // Cat cool
           ];
-          gifUrl = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+          const randomId = stableIds[Math.floor(Math.random() * stableIds.length)];
+          gifUrl = `https://media.giphy.com/media/${randomId}/giphy.gif`;
         }
         finalBlock = block.replace(gifMatch[0], '').trim();
       }
@@ -352,73 +356,96 @@ export default function App() {
 
       {/* Scrolling Chat Area */}
       <main className="flex-1 overflow-y-auto relative z-10 px-4 py-8 md:px-0 scrollbar-thin scrollbar-thumb-[#39FF14]/20 scrollbar-track-transparent">
-        <div className="max-w-3xl mx-auto space-y-10 pb-32">
+        <div className="max-w-3xl mx-auto pb-32">
           <AnimatePresence initial={false}>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`flex items-start gap-3 max-w-[90%] md:max-w-[85%] ${message.role === 'user' ? 'flex-row-reverse ml-auto' : 'flex-row'}`}>
-                  {message.role === 'model' && (
-                    <div className="flex-none w-8 h-8 rounded-full border-2 border-[#39FF14] overflow-hidden shadow-[0_0_10px_#39FF14/40] mt-1">
-                      <img 
-                        src={SIGGY_PFP} 
-                        alt="Siggy" 
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                  )}
-                  <div 
-                    className={`px-6 py-5 rounded-2xl transition-all ${
-                      message.role === 'user' 
-                        ? 'bg-[#39FF14]/15 border-2 border-[#39FF14]/40 text-white shadow-[0_0_20px_rgba(57,255,20,0.1)]' 
-                        : 'bg-[#39FF14]/10 border-2 border-[#39FF14]/30 backdrop-blur-xl shadow-[0_0_25px_rgba(0,0,0,0.6)]'
-                    }`}
-                  >
-                    <div className="text-sm font-light tracking-wide">
-                      <Markdown components={MarkdownComponents}>{message.text}</Markdown>
-                    </div>
-                    {/* @ts-ignore */}
-                    {message.gif && (
-                      <div className="mt-4 rounded-xl overflow-hidden border border-[#39FF14]/20 shadow-[0_0_15px_rgba(57,255,20,0.1)]">
-                        {/* @ts-ignore */}
-                        <img src={message.gif} alt="Siggy reaction" className="w-full max-h-60 object-cover" referrerPolicy="no-referrer" />
+            {messages.map((message, index) => {
+              const prevMessage = messages[index - 1];
+              const isConsecutiveModel = message.role === 'model' && prevMessage?.role === 'model';
+              const showPfp = message.role === 'model' && !isConsecutiveModel;
+              const marginTop = index === 0 ? 'mt-0' : (isConsecutiveModel ? 'mt-2' : 'mt-10');
+
+              return (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} ${marginTop}`}
+                >
+                  <div className={`flex items-start gap-3 max-w-[90%] md:max-w-[85%] ${message.role === 'user' ? 'flex-row-reverse ml-auto' : 'flex-row'}`}>
+                    {message.role === 'model' && (
+                      <div className={`flex-none w-8 h-8 rounded-full overflow-hidden mt-1 ${showPfp ? 'border-2 border-[#39FF14] shadow-[0_0_10px_#39FF14/40]' : 'invisible'}`}>
+                        {showPfp && (
+                          <img 
+                            src={SIGGY_PFP} 
+                            alt="Siggy" 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        )}
                       </div>
                     )}
+                    <div 
+                      className={`px-6 py-5 rounded-2xl transition-all ${
+                        message.role === 'user' 
+                          ? 'bg-[#39FF14]/15 border-2 border-[#39FF14]/40 text-white shadow-[0_0_20px_rgba(57,255,20,0.1)]' 
+                          : 'bg-[#39FF14]/10 border-2 border-[#39FF14]/30 backdrop-blur-xl shadow-[0_0_25px_rgba(0,0,0,0.6)]'
+                      }`}
+                    >
+                      <div className="text-sm font-light tracking-wide">
+                        <Markdown components={MarkdownComponents}>{message.text}</Markdown>
+                      </div>
+                      {/* @ts-ignore */}
+                      {message.gif && (
+                        <div className="mt-4 rounded-xl overflow-hidden border border-[#39FF14]/20 shadow-[0_0_15px_rgba(57,255,20,0.1)]">
+                          {/* @ts-ignore */}
+                          <img src={message.gif} alt="Siggy reaction" className="w-full max-h-60 object-cover" referrerPolicy="no-referrer" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
           
           {isLoading && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex justify-start"
+              className={`flex justify-start ${messages[messages.length - 1]?.role === 'model' ? 'mt-2' : 'mt-10'}`}
             >
-              <div className="bg-black/40 border border-[#39FF14]/20 backdrop-blur-sm px-6 py-4 rounded-2xl flex items-center gap-4 shadow-[0_0_15px_rgba(57,255,20,0.1)]">
-                <div className="flex gap-1.5">
-                  <motion.div 
-                    animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} 
-                    transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}
-                    className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_8px_#39FF14]" 
-                  />
-                  <motion.div 
-                    animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} 
-                    transition={{ repeat: Infinity, duration: 1.5, delay: 0.3 }}
-                    className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_8px_#39FF14]" 
-                  />
-                  <motion.div 
-                    animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} 
-                    transition={{ repeat: Infinity, duration: 1.5, delay: 0.6 }}
-                    className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_8px_#39FF14]" 
-                  />
+              <div className="flex items-start gap-3 max-w-[90%] md:max-w-[85%] flex-row">
+                {messages[messages.length - 1]?.role === 'model' ? (
+                  <div className="flex-none w-8 h-8 rounded-full mt-1 invisible" />
+                ) : (
+                  <div className="flex-none w-8 h-8 rounded-full border-2 border-[#39FF14] overflow-hidden shadow-[0_0_10px_#39FF14/40] mt-1">
+                    <img 
+                      src={SIGGY_PFP} 
+                      alt="Siggy" 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                )}
+                <div className="bg-black/40 border border-[#39FF14]/20 backdrop-blur-sm px-6 py-4 rounded-2xl flex items-center gap-4 shadow-[0_0_15px_rgba(57,255,20,0.1)]">
+                  <div className="flex gap-1.5">
+                    <motion.div 
+                      animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} 
+                      transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}
+                      className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_8px_#39FF14]" 
+                    />
+                    <motion.div 
+                      animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} 
+                      transition={{ repeat: Infinity, duration: 1.5, delay: 0.3 }}
+                      className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_8px_#39FF14]" 
+                    />
+                    <motion.div 
+                      animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }} 
+                      transition={{ repeat: Infinity, duration: 1.5, delay: 0.6 }}
+                      className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_8px_#39FF14]" 
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>

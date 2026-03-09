@@ -129,15 +129,20 @@ export default function App() {
       let gifUrl = '';
       const gifMatch = block.match(/\[GIF:\s*([^\]]+)\]/);
       if (gifMatch) {
-        const searchTerm = encodeURIComponent(gifMatch[1]);
-        // Using a public Giphy search redirect or similar
-        gifUrl = `https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/3o7TKMGpxx877C1968/giphy.gif`; // Fallback
-        // Actually, let's try to use a more dynamic one if possible, but for now, let's just use a placeholder or a specific one
-        // Better: use a cat gif service
-        if (gifMatch[1].toLowerCase().includes('cat') || gifMatch[1].toLowerCase().includes('siggy')) {
+        const searchTerm = gifMatch[1].toLowerCase();
+        
+        // Dynamic cat gifs for cat-related terms
+        if (searchTerm.includes('cat') || searchTerm.includes('siggy') || searchTerm.includes('kitten') || searchTerm.includes('meow')) {
           gifUrl = `https://cataas.com/cat/gif?${Date.now()}`;
         } else {
-          gifUrl = `https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/3o7TKMGpxx877C1968/giphy.gif`;
+          // A few different funny/reaction fallbacks to avoid repetition
+          const fallbacks = [
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/3o7TKMGpxx877C1968/giphy.gif', // Laughing
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/26n6Gx9moCgs1pUuk/giphy.gif', // LOL
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/l378bu6yeTuYMhrDa/giphy.gif', // Wow
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/3o7TKVUn7iM8FMEU24/giphy.gif', // Thinking
+          ];
+          gifUrl = fallbacks[Math.floor(Math.random() * fallbacks.length)];
         }
         finalBlock = block.replace(gifMatch[0], '').trim();
       }

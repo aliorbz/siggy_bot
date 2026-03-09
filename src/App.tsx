@@ -18,7 +18,7 @@ export default function App() {
     {
       id: '1',
       role: 'model',
-      text: "Ah. A new Ritualist arrives.\n\n(Siggy's ears twitch slightly.)\n\nHmm… interesting.\n\nIn timeline 12 you brought snacks.\n\nThis timeline is less generous.",
+      text: "Ah. A new Ritualist arrives. Hmm… interesting. In timeline 12 you brought snacks. This timeline is less generous. (twitching)",
       timestamp: Date.now(),
     },
   ]);
@@ -75,36 +75,13 @@ export default function App() {
       parts: [{ text: msg.text }],
     }));
 
-    // Pre-process text to ensure stage directions (...) are on separate lines
+    // Pre-process text to handle dashes and basic cleanup
     const processSiggyText = (text: string) => {
       if (!text) return text;
       
       let processed = text;
       
-      // 1. Find bracketed content (stage directions) and ensure it has double newlines around it
-      // This catches (Siggy tilts head), (pauses), etc.
-      processed = processed
-        .replace(/([^\n])\s*(\([^)]+\))/g, '$1\n\n$2') 
-        .replace(/(\([^)]+\))\s*([^\n])/g, '$1\n\n$2');
-
-      // 2. Find italicized blocks that look like actions (e.g., *chuckles*, *purrs*)
-      // and ensure they are also separated and wrapped in parentheses if they aren't already
-      
-      // Handle single action string
-      processed = processed.replace(/^(\*[^*]+\*)$/g, '($1)');
-      
-      // Handle start of string followed by more text
-      processed = processed.replace(/^(\*[^*]+\*)\s*([^\n])/g, '($1)\n\n$2');
-      
-      // Handle middle or end of string
-      processed = processed.replace(/([^\n])\s*(\*[^*]+\*)/g, (match, p1, p2) => {
-        // If it's already in brackets, don't double wrap
-        if (p1.trim().endsWith('(')) return match;
-        // If it's just a single word or short phrase in italics, it's likely an action
-        return `${p1}\n\n(${p2})`;
-      });
-
-      // 3. Remove dashes (-) and em-dashes (—) as requested
+      // Remove dashes (-) and em-dashes (—) as requested
       processed = processed.replace(/[—–-]/g, ',');
 
       return processed;
@@ -113,14 +90,75 @@ export default function App() {
     const responseText = await chatWithSiggy(input, history);
     const processedText = processSiggyText(responseText);
 
-    const siggyMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'model',
-      text: processedText,
-      timestamp: Date.now(),
-    };
+    // Split text into blocks if it's long
+    const initialParagraphs = processedText.split(/\n\n+/).filter(p => p.trim());
+    let blocks: string[] = [];
 
-    setMessages((prev) => [...prev, siggyMessage]);
+    initialParagraphs.forEach(para => {
+      // If a paragraph is long (more than 2 sentences or > 150 chars), split it by sentences
+      const sentences = para.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [para];
+      
+      if (sentences.length > 2 || para.length > 150) {
+        // Group sentences into smaller chunks (1-2 sentences per block)
+        for (let i = 0; i < sentences.length; i += 2) {
+          const chunk = sentences.slice(i, i + 2).join(' ').trim();
+          if (chunk) blocks.push(chunk);
+        }
+      } else {
+        blocks.push(para);
+      }
+    });
+
+    // Ensure the action tag (e.g. "(playful)") stays with the last block if it got separated
+    if (blocks.length > 1) {
+      const lastBlock = blocks[blocks.length - 1];
+      const secondToLast = blocks[blocks.length - 2];
+      
+      // If the last block is JUST the action tag, merge it back
+      if (lastBlock.trim().match(/^\([^)]+\)$/)) {
+        blocks[blocks.length - 2] = secondToLast + " " + lastBlock;
+        blocks.pop();
+      }
+    }
+
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      
+      // Check for GIF tag
+      let finalBlock = block;
+      let gifUrl = '';
+      const gifMatch = block.match(/\[GIF:\s*([^\]]+)\]/);
+      if (gifMatch) {
+        const searchTerm = encodeURIComponent(gifMatch[1]);
+        // Using a public Giphy search redirect or similar
+        gifUrl = `https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/3o7TKMGpxx877C1968/giphy.gif`; // Fallback
+        // Actually, let's try to use a more dynamic one if possible, but for now, let's just use a placeholder or a specific one
+        // Better: use a cat gif service
+        if (gifMatch[1].toLowerCase().includes('cat') || gifMatch[1].toLowerCase().includes('siggy')) {
+          gifUrl = `https://cataas.com/cat/gif?${Date.now()}`;
+        } else {
+          gifUrl = `https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHBqZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6ZzRyeXN6JmVwPXYxX2dpZnNfc2VhcmNoJmN0PWc/3o7TKMGpxx877C1968/giphy.gif`;
+        }
+        finalBlock = block.replace(gifMatch[0], '').trim();
+      }
+
+      const siggyMessage: Message = {
+        id: (Date.now() + i).toString(),
+        role: 'model',
+        text: finalBlock,
+        timestamp: Date.now(),
+        // @ts-ignore - adding optional gif property
+        gif: gifUrl
+      };
+
+      setMessages((prev) => [...prev, siggyMessage]);
+      
+      if (i < blocks.length - 1) {
+        // Add a small delay between blocks to simulate typing
+        await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1000));
+      }
+    }
+
     setIsLoading(false);
   };
 
@@ -129,7 +167,7 @@ export default function App() {
       {
         id: Date.now().toString(),
         role: 'model',
-        text: "Altar cleared, Ritualist.\n\n(Siggy knocks the past off the table.)\n\nNew timeline.",
+        text: "Altar cleared, Ritualist. New timeline. (purring)",
         timestamp: Date.now(),
       },
     ]);
@@ -175,13 +213,18 @@ export default function App() {
       };
       
       const fullText = extractText(children).trim();
-      const isStageDirection = fullText.startsWith('(') && fullText.endsWith(')');
       
-      // If it looks like a stage direction, style it aggressively
-      if (isStageDirection) {
+      // Check if it ends with an action in parentheses like (laughing)
+      const actionMatch = fullText.match(/\(([^)]+)\)$/);
+      
+      if (actionMatch) {
+        const action = actionMatch[0];
+        const mainText = fullText.substring(0, fullText.length - action.length).trim();
+        
         return (
-          <p className="text-[10px] italic opacity-70 my-3 font-mono tracking-wider leading-relaxed text-yellow-100/80 bg-white/5 px-3 py-1.5 rounded-lg border-l-2 border-yellow-100/20">
-            {children}
+          <p className="mb-4 last:mb-0 leading-relaxed">
+            {highlightRitual(mainText)}
+            <span className="text-yellow-400 italic ml-2">{action}</span>
           </p>
         );
       }
@@ -335,6 +378,13 @@ export default function App() {
                     <div className="text-sm font-light tracking-wide">
                       <Markdown components={MarkdownComponents}>{message.text}</Markdown>
                     </div>
+                    {/* @ts-ignore */}
+                    {message.gif && (
+                      <div className="mt-4 rounded-xl overflow-hidden border border-[#39FF14]/20 shadow-[0_0_15px_rgba(57,255,20,0.1)]">
+                        {/* @ts-ignore */}
+                        <img src={message.gif} alt="Siggy reaction" className="w-full max-h-60 object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

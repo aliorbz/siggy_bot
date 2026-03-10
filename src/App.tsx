@@ -132,22 +132,52 @@ export default function App() {
       if (gifMatch) {
         const searchTerm = gifMatch[1].toLowerCase();
         
-        // Use cataas for almost everything cat-related or as a very reliable fallback
-        if (searchTerm.includes('cat') || searchTerm.includes('siggy') || searchTerm.includes('kitten') || searchTerm.includes('meow') || Math.random() > 0.5) {
+        // Map specific common search terms to stable, high-quality IDs
+        const memeMap: Record<string, string> = {
+          'laughing': '3o7TKMGpxx877C1968',
+          'lol': '26n6Gx9moCgs1pUuk',
+          'wow': 'l378bu6yeTuYMhrDa',
+          'thinking': '3o7TKVUn7iM8FMEU24',
+          'working': 'vFKqnCdLPNOKc',
+          'typing': 'vFKqnCdLPNOKc',
+          'cool': 'CjmvTCZf2U3p09Cn0h',
+          'dance': 'JIX9t2j0ZTN9S',
+          'vibing': 'jpbcoe7YBghF8C2hU7',
+          'confused': 'H4DjXQXamtTiIuCcRU',
+          'popcorn': 'ICOgUN2AyvVN6',
+          'deal with it': 'yFQ0ywscgobJK',
+          'falling': '3o7TKVUn7iM8FMEU24',
+          'sleep': 'vFKqnCdLPNOKc',
+          'angry': 'vFKqnCdLPNOKc',
+          'sad': 'vFKqnCdLPNOKc',
+          'happy': 'JIX9t2j0ZTN9S',
+          'celebrate': 'JIX9t2j0ZTN9S',
+          'shocked': 'l378bu6yeTuYMhrDa',
+          'scared': 'H4DjXQXamtTiIuCcRU',
+          'hungry': 'ICOgUN2AyvVN6',
+          'eating': 'ICOgUN2AyvVN6',
+        };
+
+        // Find a matching ID from the map
+        let matchedId = '';
+        for (const [key, id] of Object.entries(memeMap)) {
+          if (searchTerm.includes(key)) {
+            matchedId = id;
+            break;
+          }
+        }
+
+        if (matchedId) {
+          gifUrl = `https://media.giphy.com/media/${matchedId}/giphy.gif`;
+        } else if (searchTerm.includes('cat') || searchTerm.includes('siggy') || searchTerm.includes('kitten') || searchTerm.includes('meow')) {
+          // If it's explicitly cat-related but not in our map, use cataas
           gifUrl = `https://cataas.com/cat/gif?${Date.now()}`;
         } else {
-          // Stable Giphy IDs that rarely break
-          const stableIds = [
-            '3o7TKMGpxx877C1968', // Laughing
-            '26n6Gx9moCgs1pUuk', // LOL
-            'l378bu6yeTuYMhrDa', // Wow
-            '3o7TKVUn7iM8FMEU24', // Thinking
-            'vFKqnCdLPNOKc', // Cat typing
-            'CjmvTCZf2U3p09Cn0h', // Cat cool
-          ];
-          const randomId = stableIds[Math.floor(Math.random() * stableIds.length)];
-          gifUrl = `https://media.giphy.com/media/${randomId}/giphy.gif`;
+          // If no specific match, use a random stable one but only if it's not "spammy"
+          // We'll use cataas as a safe fallback for "general" vibes
+          gifUrl = `https://cataas.com/cat/gif?${Date.now()}`;
         }
+        
         finalBlock = block.replace(gifMatch[0], '').trim();
       }
 

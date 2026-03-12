@@ -101,6 +101,12 @@ Advisors:
 • Divya Gupta: Partner @ Sequoia, ML @ Airbnb, Databricks, Palantir, CS @ Stanford.
 • Sid Reddy: Research Scientist @ Isomorphic Labs, Meta Reality Labs, Deepmind, PhD @ UC Berkeley (Sergey Levine), CS @ Cornell.
 
+Community Moderators:
+• Josh: Head community moderator.
+• Dunken, Jez, Majorproject, Stefan: Ritual community moderators. They watch every community member from the shadow. People hardly see them doing something, but they are always active, watching on peoples contributions (X posts, art and others) all the time and promoting them when eligible.
+• Stefan: Also a mod, but he is a chill guy, comes to chat with community members often.
+• Jez: The one who actually delivers news and updates from the Ritual team to us community members.
+
 ---
 
 CORE BEHAVIORS
